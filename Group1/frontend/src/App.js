@@ -46,7 +46,14 @@ function CreateRoomBookingPage() {
 
   const handleBookRoomButtonPressed = () => {
     setMessage("Book Room was pressed!");
+    console.log("Additional Resources value:", additionalResources);
     //Update database etc. 
+  };
+
+  const [additionalResources, setAdditionalResources] = useState("");
+
+  const handleAdditionalResourcesChange = (e) => {
+    setAdditionalResources(e.target.value);
   };
 
   return (
@@ -131,7 +138,25 @@ function CreateRoomBookingPage() {
         </div>
       </div>
       <div className="ResourceTextfield-wrapper">
-        For Tyler - additional resouce textfield goes here
+    <FormControl>
+      <TextField 
+      label="Additional Resources"
+      multiline
+      rows={3}
+      value={additionalResources}
+      onChange={handleAdditionalResourcesChange}
+      placeholder="Describe any additional resources or special requirements..."
+      variant="outlined"
+      slotProps={{
+        inputLabel: {
+          shrink: true,
+        },
+      }}
+    />
+    <FormHelperText>
+      Specify any additional equipment, setup, or services required for your booking
+    </FormHelperText>
+    </FormControl>
       </div>
       <div className="BookRoomButton-wrapper">
         <Button 
