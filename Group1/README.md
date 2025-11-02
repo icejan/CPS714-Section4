@@ -24,18 +24,20 @@ Go to https://console.firebase.google.com/ and sign in with your account
 
 If you are not a member to our firebase project, tell me (Janice) to add you
 
-Select the project 'cps714'
+* Select the project 'cps714'
+<img width="1440" height="900" alt="Screenshot 2025-11-02 at 3 07 37 PM" src="https://github.com/user-attachments/assets/ad951b0a-4689-4fec-bbc9-cafbc0cc391a" />
 
-Select the gear icon to go to project settings
+* Select the gear icon to go to project settings
+<img width="1713" height="965" alt="image" src="https://github.com/user-attachments/assets/a2dcd23d-5324-4c80-9b13-d7a0d7e85c8a" />
 
-open the Service Accounts tab.
-
-Under the Firebase Admin SDK section, click Generate new private key.
-
-A confirmation prompt will appear. Confirm to generate the key. 
-This will automatically download a JSON file (your serviceAccountKey.json).
-
-Place this serviceAccountKey.json file in **CPS714-Section4/Group1/backend/src** 
+* open the Service Accounts tab.
+* Under the Firebase Admin SDK section, click **Generate new private key**.
+* A confirmation prompt will appear. Confirm to generate the key. 
+* This will automatically download a JSON file (your serviceAccountKey.json).
+<img width="2880" height="1800" alt="image" src="https://github.com/user-attachments/assets/1c992729-45ff-4815-ab3b-e393b228737d" />
+* Rename the downloaded file to serviceAccountKey.json
+* Place this serviceAccountKey.json file in **CPS714-Section4/Group1/backend/src** 
+<img width="313" height="375" alt="image" src="https://github.com/user-attachments/assets/1b47f37b-76b2-4576-8686-557aec129172" />
 
 ### 2. In the backend folder, on terminal enter
 `npm install `
@@ -51,14 +53,15 @@ Place this serviceAccountKey.json file in **CPS714-Section4/Group1/backend/src**
 
   (Open [http://localhost:3000](http://localhost:3000) to view it in your browser) <br>
 
-  To stop the backend server, enter **CTRL+C** on terminal
-  To stop the frontend, enter **CTRL+C** on the SECOND terminal
+  To stop the backend server, enter **CTRL+C** on terminal <br>
+  To stop the frontend, enter **CTRL+C** on the SECOND terminal <br>
   
    FYI: keep BOTH terminals running while you work on the code: everytime you save changes to your code locally it will auto compile! Your browser will auto refresh with the new changes you made
    
 ### 5. To view the Database data
-Go to https://console.firebase.google.com/ and sign in with your account
-Select the project 'cps714'
-On the left under build, select RealTime Database
+* Go to https://console.firebase.google.com/ and sign in with your account
+* Select the project 'cps714'
+* On the left under build, select RealTime Database
 
+<img width="2880" height="1800" alt="image" src="https://github.com/user-attachments/assets/a783e6c4-fbb3-4e65-b2e4-b885d13e95f4" />
 
