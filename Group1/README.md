@@ -1,4 +1,10 @@
 # Room and Resources Booking App
+## Table of Contents
+* [Prerequisites](#prerequisites)
+* [How to run the backend server and React](#how-to-run-the-backend-server-and-react)
+   * [get serviceAccountKey.json for Firebase](#1-ensure-serviceaccountkeyjson-is-inside-backendsrc)
+   * [npm commands to run app](#2-in-the-backend-folder-on-terminal-enter)
+
 ## Prerequisites
 ### 1. Ensure you have node.js installed to be able to use npm. 
    (You can install it from https://nodejs.org/)
@@ -18,11 +24,15 @@
   <img width="509" height="308" alt="image" src="https://github.com/user-attachments/assets/58c94a8a-c7fc-40ab-a590-f7e65942c968" /><br>
   <img width="491" height="466" alt="image" src="https://github.com/user-attachments/assets/fe978311-5fa1-4af6-8ee1-1eda6dd42376" /><br>
 
-## How to run the backend server and React
-### 1. Ensure serviceAccountKey.json is Inside backend/src
-Go to https://console.firebase.google.com/ and sign in with your account
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-If you are not a member to our firebase project, tell me (Janice) to add you
+
+## How to run the backend server and React
+
+### 1. Ensure serviceAccountKey.json is inside backend/src
+* Go to https://console.firebase.google.com/ and sign in with your account
+
+* If you are not a member to our firebase project, tell me (Janice) to add you
 
 * Select the project 'cps714'
 <img width="1440" height="900" alt="Screenshot 2025-11-02 at 3 07 37 PM" src="https://github.com/user-attachments/assets/ad951b0a-4689-4fec-bbc9-cafbc0cc391a" />
@@ -35,8 +45,8 @@ If you are not a member to our firebase project, tell me (Janice) to add you
 * A confirmation prompt will appear. Confirm to generate the key. 
 * This will automatically download a JSON file (your serviceAccountKey.json).
 <img width="2880" height="1800" alt="image" src="https://github.com/user-attachments/assets/1c992729-45ff-4815-ab3b-e393b228737d" />
-* Rename the downloaded file to serviceAccountKey.json
-* Place this serviceAccountKey.json file in **CPS714-Section4/Group1/backend/src** 
+* Rename the downloaded file to serviceAccountKey.json <br>
+* Place this serviceAccountKey.json file in **CPS714-Section4/Group1/backend/src** <br>
 <img width="313" height="375" alt="image" src="https://github.com/user-attachments/assets/1b47f37b-76b2-4576-8686-557aec129172" />
 
 ### 2. In the backend folder, on terminal enter
