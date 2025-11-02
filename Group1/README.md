@@ -4,6 +4,7 @@
 * [How to run the backend server and React](#how-to-run-the-backend-server-and-react)
    * [get serviceAccountKey.json for Firebase](#1-ensure-serviceaccountkeyjson-is-inside-backendsrc)
    * [npm commands to run app](#2-in-the-backend-folder-on-terminal-enter)
+   * [access the database data](#5-to-view-the-database-data)
 
 ## Prerequisites
 ### 1. Ensure you have node.js installed to be able to use npm. 
