@@ -4,7 +4,7 @@ import React, { Component, useState, useEffect} from 'react';
 import { FormControl, FormControlLabel, FormHelperText, TextField, Checkbox, Button } from '@mui/material';
 
 function CreateRoomBookingPage() {
-
+  
   /* Room Dropdown Button Handler */
   const [roomSelected, setRoomSelected] = useState("");
 
@@ -14,7 +14,12 @@ function CreateRoomBookingPage() {
     "Lecture Halls": ["DSQ09", "LIB072", "ENG103"],
     "Meeting Rooms": ["ENG358", "ILC-224", "SLC-831"],
   };
-  
+
+  /* Date and Time */
+  //JZ: Temp placeholder variables, feel free to change 
+  const startDate = new Date(2025, 10, 2, 14, 0, 0);
+  const endDate = new Date(2025, 10, 2, 16, 0, 0);
+
   /* Projector Textfield Handler */
   //Initialize default projector to 0
   const [defaultProjector, setDefaultProjector] = useState(0); 
@@ -27,7 +32,7 @@ function CreateRoomBookingPage() {
   /* Mic Textfield Handler */
   //Initialize default mic to 0
   const [defaultMic, setDefaultMic] = useState(0); 
-  const [mic,setMic] = useState(defaultMic);
+  const [micNum,setMic] = useState(defaultMic);
 
   const handleMicChange = (event) => {
             setMic (event.target.value);
@@ -35,25 +40,64 @@ function CreateRoomBookingPage() {
 
   /*  Catering Handler */
   //Initialize default catering to false
-  const [catering,setCatering] = useState(false);
+  const [cateringSelected,setCatering] = useState(false);
 
   const handleCateringChange = (event) => {
             setCatering (event.target.checked);
   };
 
-  /* Book Room Button */
-  const [message, setMessage] = useState(""); 
-
-  const handleBookRoomButtonPressed = () => {
-    setMessage("Book Room was pressed!");
-    console.log("Additional Resources value:", additionalResources);
-    //Update database etc. 
-  };
-
+  /* Additional Resources */
   const [additionalResources, setAdditionalResources] = useState("");
 
   const handleAdditionalResourcesChange = (e) => {
     setAdditionalResources(e.target.value);
+  };
+
+  /* Book Room Button */
+  const [message, setMessage] = useState(""); 
+
+  const handleBookRoomButtonPressed = async () => {
+    
+    //setMessage("Book Room was pressed!");
+    console.log("Room value:", roomSelected);
+    console.log("Start Date time:", startDate);
+    console.log("End Date time:", endDate);
+    console.log("Projector value:", projectorNum);
+    console.log("Mic value:", micNum);
+    console.log("Catering value:", cateringSelected);
+    console.log("Additional Resources value:", additionalResources);
+    
+    if (!roomSelected || roomSelected.trim() === '') {
+      setMessage("Room number cannot be empty.");
+      return;
+    }
+
+    try {
+        const response = await fetch('http://localhost:5000/api/book-room', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          roomSelected: roomSelected.trim(),
+          startDate: startDate,
+          endDate: endDate,
+          projectorNum: projectorNum,
+          micNum: micNum,
+          cateringSelected: cateringSelected,
+          additionalResources: additionalResources,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setMessage("Room booked successfully");
+      } else {
+        setMessage(data.error || "Booking failed");
+      }
+    } catch (error) {
+      setMessage("Error connecting to backend server");
+      console.error(error);
+    }
+    
   };
 
   return (
@@ -128,7 +172,7 @@ function CreateRoomBookingPage() {
               value="false" 
               control={
               <Checkbox 
-                checked={catering}
+                checked={cateringSelected}
                 onChange={handleCateringChange}
                 color="primary" 
               />}
