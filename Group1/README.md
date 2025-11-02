@@ -1,4 +1,5 @@
 # Room and Resources Booking App
+<a name="readme-top"></a>
 ## Table of Contents
 * [Prerequisites](#prerequisites)
 * [How to run the backend server and React](#how-to-run-the-backend-server-and-react)
