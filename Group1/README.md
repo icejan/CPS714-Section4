@@ -57,10 +57,10 @@
 ### 3. To start the backend server, on terminal enter
 `npm run dev `
 
-### 4. In the frontend folder, on a SECOND terminal enter
+### 4. In a SECOND terminal, in the frontend folder enter
 `npm install `
   
-### 4. To run the app, on the SECOND terminal enter
+### 4. In the SECOND terminal, to run the app enter
    `npm start ` 
 
   (Open [http://localhost:3000](http://localhost:3000) to view it in your browser) <br>
