@@ -26,6 +26,8 @@ function CreateRoomBookingPage() {
     Classrooms: ["KHW-057", "ENG202", "ENG411"],
     "Lecture Halls": ["DSQ09", "LIB072", "ENG103"],
     "Meeting Rooms": ["ENG358", "ILC-224", "SLC-831"],
+    "Gyms": ["KHW-271"],
+    "Venues": ["Sears Atrium"],
   };
 
   /* Date and Time */
@@ -65,9 +67,10 @@ function CreateRoomBookingPage() {
 
   /* Book Room Button */
   const [message, setMessage] = useState("");
+  const [messageVisible, setMessageVisible] = useState(false);
 
   const handleBookRoomButtonPressed = async () => {
-    //setMessage("Book Room was pressed!");
+    //Debug on console
     console.log("Room value:", roomSelected);
     console.log("Start Date time:", startDate);
     console.log("End Date time:", endDate);
@@ -78,15 +81,18 @@ function CreateRoomBookingPage() {
 
     if (!roomSelected || roomSelected.trim() === "") {
       setMessage("Room number cannot be empty.");
+      setMessageVisible(true);
       return;
     }
 
     if (!startDate || !endDate) {
       setMessage("Please select a start and end date/time.");
+      setMessageVisible(true);
       return;
     }
     if (endDate <= startDate) {
       setMessage("End time must be after start time.");
+      setMessageVisible(true);
       return;
     }
 
@@ -108,11 +114,17 @@ function CreateRoomBookingPage() {
       const data = await response.json();
       if (response.ok) {
         setMessage("Room booked successfully");
+        setMessageVisible(true);
+        setTimeout(() => {
+          setMessageVisible(false);
+        }, 5000);
       } else {
         setMessage(data.error || "Booking failed");
+        setMessageVisible(true);
       }
     } catch (error) {
       setMessage("Error connecting to backend server");
+      setMessageVisible(true);
       console.error(error);
     }
   };
@@ -238,7 +250,7 @@ function CreateRoomBookingPage() {
         >
           Book Room
         </Button>
-        <div>{message}</div>
+        {messageVisible && <div>{message}</div>}
       </div>
     </div>
   );
