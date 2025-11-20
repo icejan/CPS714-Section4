@@ -43,5 +43,85 @@ app.post('/api/book-room', async (req, res) => {
   }
 });
 
+app.post('/api/room-availability', async (req, res) => {
+    const { roomSelected, date } = req.body;
+
+    if (!roomSelected || !date) {
+        return res.status(400).json({ error: "Room and date are required." });
+    }
+
+    try {
+        // Convert selected date to midnight of that day
+        const selectedDay = new Date(date);
+        selectedDay.setHours(0, 0, 0, 0);
+        const startOfDay = selectedDay.getTime();
+        const endOfDay = startOfDay + 24 * 60 * 60 * 1000;
+
+        // Fetch all bookings
+        const snapshot = await db.ref("roomBookings").once("value");
+        const bookings = snapshot.val() || {};
+
+        // Collect all bookings for selecred room on selected day
+        const todaysBookings = [];
+
+        for (const id in bookings) {
+            const b = bookings[id];
+            if (b.roomSelected !== roomSelected) continue;
+
+            const bStart = new Date(b.startDate).getTime();
+            const bEnd = new Date(b.endDate).getTime();
+
+            // Keep bookings that overlap this day
+            if (bStart < endOfDay && bEnd > startOfDay) {
+                todaysBookings.push({ start: bStart, end: bEnd });
+            }
+        }
+
+        // Sort bookings by time
+        todaysBookings.sort((a, b) => a.start - b.start);
+
+        // Generate available slots for the day assumed 8am - 10pm
+        const opening = new Date(date);
+        opening.setHours(8, 0, 0, 0);
+        const openingTime = opening.getTime();
+
+        const closing = new Date(date);
+        closing.setHours(22, 0, 0, 0);
+        const closingTime = closing.getTime();
+
+        const available = [];
+
+        let current = openingTime;
+
+        for (const booking of todaysBookings) {
+            if (current < booking.start) {
+                available.push({
+                    start: new Date(current),
+                    end: new Date(booking.start)
+                });
+            }
+            current = Math.max(current, booking.end);
+        }
+
+        // Last gap of the day
+        if (current < closingTime) {
+            available.push({
+                start: new Date(current),
+                end: new Date(closingTime)
+            });
+        }
+
+        return res.json({
+            room: roomSelected,
+            date: date,
+            availableSlots: available
+        });
+    } catch (error) {
+        console.error("Error checking availability:", error);
+        return res.status(500).json({ error: "Internal server error." });
+    }
+});
+
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
