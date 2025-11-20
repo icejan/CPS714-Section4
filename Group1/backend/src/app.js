@@ -24,6 +24,22 @@ app.post('/api/book-room', async (req, res) => {
   }
 
   try {
+    const start = new Date(startDate).getTime();
+    const end = new Date(endDate).getTime();
+    const snapshot = await db.ref('roomBookings').once('value');
+    const bookings = snapshot.val() || {};
+
+    for (const id in bookings) {
+      const booking = bookings[id];
+      if (booking.roomSelected === roomSelected.trim()) {
+        const bookingStart = new Date(booking.startDate).getTime();
+        const bookingEnd = new Date(booking.endDate).getTime();
+        if (start < bookingEnd && end > bookingStart) {
+          return res.status(409).json({ error: 'Room is already booked for this time slot' });
+        }
+      }
+    }
+
     const ref = db.ref('roomBookings').push();
     await ref.set({
       roomSelected: roomSelected.trim(),
@@ -122,6 +138,39 @@ app.post('/api/room-availability', async (req, res) => {
     }
 });
 
+app.post('/api/check-availability', async (req, res) => {
+  const { startDate, endDate } = req.body;
+
+  if (!startDate || !endDate) {
+    return res.status(400).json({ error: 'Start date and end date are required' });
+  }
+
+  try {
+    const start = new Date(startDate).getTime();
+    const end = new Date(endDate).getTime();
+
+    const snapshot = await db.ref('roomBookings').once('value');
+    const bookings = snapshot.val() || {};
+    const unavailableRooms = [];
+
+    for (const id in bookings) {
+      const booking = bookings[id];
+      const bookingStart = new Date(booking.startDate).getTime();
+      const bookingEnd = new Date(booking.endDate).getTime();
+
+      if (start < bookingEnd && end > bookingStart) {
+        unavailableRooms.push(booking.roomSelected);
+      }
+    }
+
+    const uniqueUnavailableRooms = [...new Set(unavailableRooms)];
+
+    return res.json({ unavailableRooms: uniqueUnavailableRooms });
+  } catch (error) {
+    console.error('Error checking availability:', error);
+    return res.status(500).json({ error: 'Failed to check availability' });
+  }
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
