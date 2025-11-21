@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -17,6 +17,9 @@
     "firebase-admin": "^13.5.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "firebase-admin-mock": "^0.0.10",
+    "jest": "^30.2.0",
+    "nodemon": "^3.1.10",
+    "supertest": "^7.1.4"
   }
 }
