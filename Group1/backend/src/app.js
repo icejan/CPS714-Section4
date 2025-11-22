@@ -138,7 +138,7 @@ app.post('/api/room-availability', async (req, res) => {
     }
 });
 
-app.post('/api/check-availability', async (req, res) => {
+app.get('/api/check-availability', async (req, res) => {
   const { startDate, endDate } = req.body;
 
   if (!startDate || !endDate) {
