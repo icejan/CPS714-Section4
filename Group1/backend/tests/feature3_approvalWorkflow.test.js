@@ -38,8 +38,8 @@ describe('Feature#3 Test Suite', () => {
 
 
   /* Test Case #3.0: */
-  describe('Testcase #3.0: successfully book a room with additional resources', () => {
-    it('should successfully book a room with additional resources', async () => {
+  describe('Testcase #3.0: successfully book a room', () => {
+    it('should successfully creating a booking request for a room', async () => {
       const bookingData = {
         roomSelected : 'ENG103',
         startDate: '2023-11-28T10:00:00.000Z',
@@ -64,6 +64,9 @@ describe('Feature#3 Test Suite', () => {
 
       // Verify that set was called with the correct data including additionalResources
       expect(mockRef.set).toHaveBeenCalledWith(expect.objectContaining({
+        roomSelected: bookingData.roomSelected,
+        startDate: bookingData.startDate,
+        endDate: bookingData.endDate,
         projectorNum: bookingData.projectorNum,
         micNum: bookingData.micNum,
         cateringSelected: bookingData.cateringSelected,
@@ -82,7 +85,8 @@ describe('Feature#3 Test Suite', () => {
         projectorNum: 1,
         micNum: 2,
         cateringSelected: 0,
-        additionalResources: 'Calculators'
+        additionalResources: 'Calculators',
+        status: 'Pending',
       };
 
       // Mock no existing bookings to avoid conflict
