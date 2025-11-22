@@ -16,8 +16,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 function CreateRoomBookingPage() {
   /* Room Dropdown Button Handler */
   const [roomSelected, setRoomSelected] = useState("");
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
+
 
   // save “not sent” booking here until backend is ready
   const [bookingDraft, setBookingDraft] = useState(null);
@@ -31,6 +30,8 @@ function CreateRoomBookingPage() {
   };
 
   /* Date and Time */
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
 
   /* Projector Textfield Handler */
   //Initialize default projector to 0
@@ -158,6 +159,7 @@ function CreateRoomBookingPage() {
             <DateTimePicker
               label="Start date & time"
               value={startDate}
+              disablePast
               onChange={setStartDate}
             />
             <DateTimePicker
