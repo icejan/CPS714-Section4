@@ -38,7 +38,7 @@ describe('Feature#3 Test Suite', () => {
 
 
   /* Test Case #3.0: */
-  describe('Testcase #2.0: successfully book a room with additional resources', () => {
+  describe('Testcase #3.0: successfully book a room with additional resources', () => {
     it('should successfully book a room with additional resources', async () => {
       const bookingData = {
         roomSelected : 'ENG103',
@@ -73,7 +73,7 @@ describe('Feature#3 Test Suite', () => {
   });
 
   /* Test Case #3.1 */
-  describe('Test Case #3.0: warning message appears when user tries to book room without selecting a room.', () => {
+  describe('Test Case #3.1: warning message appears when user tries to book room without selecting a room.', () => {
     it('should NOT successfully book a room with an empty room value', async () => {
       const bookingData = {
         roomSelected: '',
