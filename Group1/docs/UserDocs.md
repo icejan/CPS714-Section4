@@ -84,7 +84,7 @@ Now click **BOOK ROOM** and your room booking request will be inquired!
     **Cause:** the frontend server may not be running properly.
     1. Clear your browser cache or try an incognito/private window.
     2. Confirm the server is running at http://localhost:3000.
-* Q2: Book Room button is not working and shows "Error connecting to backend server"
+* Q2: Book Room button is not working and shows "Error connecting to backend server"<br>
     **Cause:** the backend server may not be running properly.
     1. Clear your browser cache or try an incognito/private window.
     2. Disable ad-blocks or third party extensions in your browser
