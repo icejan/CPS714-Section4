@@ -88,4 +88,4 @@ Now click **BOOK ROOM** and your room booking request will be inquired!
     Cause: the backend server may not be running properly.
     1. Clear your browser cache.
     2. Disable ad-blocks or third party extensions in your browser
-    2. Confirm the backend server is running at http://localhost:5000.
+    3. Confirm the backend server is running at http://localhost:5000.
