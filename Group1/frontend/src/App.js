@@ -17,7 +17,6 @@ function CreateRoomBookingPage() {
   /* Room Dropdown Button Handler */
   const [roomSelected, setRoomSelected] = useState("");
 
-
   // save “not sent” booking here until backend is ready
   const [bookingDraft, setBookingDraft] = useState(null);
   // room options ranging from classrooms, lecture halls, and meeting rooms
@@ -25,8 +24,8 @@ function CreateRoomBookingPage() {
     Classrooms: ["KHW-057", "ENG202", "ENG411"],
     "Lecture Halls": ["DSQ09", "LIB072", "ENG103"],
     "Meeting Rooms": ["ENG358", "ILC-224", "SLC-831"],
-    "Gyms": ["KHW-271"],
-    "Venues": ["Sears Atrium"],
+    Gyms: ["KHW-271"],
+    Venues: ["Sears Atrium"],
   };
 
   /* Date and Time */
@@ -159,14 +158,34 @@ function CreateRoomBookingPage() {
             <DateTimePicker
               label="Start date & time"
               value={startDate}
+              onChange={(newValue) => {
+                setStartDate(newValue);
+
+                if (endDate && newValue && endDate < newValue) {
+                  setEndDate(null);
+                }
+              }}
               disablePast
-              onChange={setStartDate}
+              closeOnSelect
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                },
+              }}
             />
+
             <DateTimePicker
               label="End date & time"
               value={endDate}
               onChange={setEndDate}
               minDateTime={startDate || undefined}
+              disablePast
+              closeOnSelect
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                },
+              }}
             />
           </div>
         </LocalizationProvider>
