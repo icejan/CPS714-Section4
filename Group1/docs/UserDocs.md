@@ -11,7 +11,7 @@ Below will detail the functions of our app and how to use it.
 
 ## Prerequisites
 * **node.js**
-<br>You may can install it from https://nodejs.org/
+<br>You may can install it from https://nodejs.org/ 
    
    Verify Node.js is installed by typing in terminal `npm -v` <br>
    
@@ -38,11 +38,11 @@ Below will detail the functions of our app and how to use it.
 
 ## Running the Application
 ### 1. Start the backend server
-* Go to the backend directory and enter the command on terminal
+* Go to the backend directory and enter the command on terminal <br>
 `npm run dev `
 * Verify it runs on port: 5000
-### 1. Start the frontend 
-* Go to the backend directory and enter the command on terminal
+### 2. Start the frontend 
+* Go to the backend directory and enter the command on terminal <br>
 `npm start ` 
 * Verify it runs on port: 3000
 
