@@ -1,4 +1,4 @@
-# User Guide
+# Room and Resource Booking System - User Guide
 Welcome to the final project for CPS714 Section 4 Group 1. 
 Below will detail the functions of our app and how to use it.
 <a name="readme-top"></a>
