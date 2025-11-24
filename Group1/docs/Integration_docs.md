@@ -83,7 +83,6 @@ To create booking requests, you must have a serviceAccountKey.json in your proje
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Troubleshooting and FAQ
-
 ### Q1: API /api/book-room returns 400 Bad Request
 Solution: Verify that all required fields (roomId, startTime, endTime) are included in the POST request and follow the correct formats
 
