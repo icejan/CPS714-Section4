@@ -31,6 +31,7 @@ function CreateRoomBookingPage() {
   /* Date and Time */
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+  const isInvalidRange = startDate && endDate && endDate <= startDate;
 
   /* Projector Textfield Handler */
   //Initialize default projector to 0
@@ -90,12 +91,12 @@ function CreateRoomBookingPage() {
       setMessageVisible(true);
       return;
     }
+
     if (endDate <= startDate) {
       setMessage("End time must be after start time.");
       setMessageVisible(true);
       return;
     }
-
     try {
       const response = await fetch("http://localhost:5000/api/book-room", {
         method: "POST",
@@ -115,6 +116,16 @@ function CreateRoomBookingPage() {
       if (response.ok) {
         setMessage("Room booked successfully");
         setMessageVisible(true);
+
+        // Reset form for a new booking
+        setRoomSelected("");
+        setStartDate(null);
+        setEndDate(null);
+        setProjector(defaultProjector);
+        setMic(defaultMic);
+        setCatering(false);
+        setAdditionalResources("");
+
         setTimeout(() => {
           setMessageVisible(false);
         }, 5000);
@@ -154,7 +165,7 @@ function CreateRoomBookingPage() {
       </div>
       <div className="Calendar-wrapper">
         <LocalizationProvider dateAdapter={AdapterDateFns}>
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <DateTimePicker
               label="Start date & time"
               value={startDate}
@@ -166,7 +177,6 @@ function CreateRoomBookingPage() {
                 }
               }}
               disablePast
-              closeOnSelect
               slotProps={{
                 textField: {
                   fullWidth: true,
@@ -177,19 +187,23 @@ function CreateRoomBookingPage() {
             <DateTimePicker
               label="End date & time"
               value={endDate}
-              onChange={setEndDate}
-              minDateTime={startDate || undefined}
+              onChange={setEndDate} // <-- just set it
               disablePast
-              closeOnSelect
+              minDateTime={startDate || undefined}
               slotProps={{
                 textField: {
                   fullWidth: true,
+                  error: Boolean(isInvalidRange),
+                  helperText: isInvalidRange
+                    ? "End time must be after start time."
+                    : "",
                 },
               }}
             />
           </div>
         </LocalizationProvider>
       </div>
+
       <div className="ResourceButtons-wrapper">
         <div className="ResourceProjector-wrappper">
           <FormControl>
