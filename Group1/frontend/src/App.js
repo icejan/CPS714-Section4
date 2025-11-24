@@ -16,9 +16,31 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 function CreateRoomBookingPage() {
   /* Room Dropdown Button Handler */
   const [roomSelected, setRoomSelected] = useState("");
+  const [roomBookings, setRoomBookings] = useState([]);
 
-  // save “not sent” booking here until backend is ready
-  const [bookingDraft, setBookingDraft] = useState(null);
+  // fetch room availability data whenever user selects a room
+  useEffect(() => {
+    if (!roomSelected) {
+      setRoomBookings([]);
+      return;
+    }
+
+    const fetchBookings = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:5000/api/room-schedule?room=${encodeURIComponent(roomSelected)}`
+        );
+        const data = await res.json();
+        setRoomBookings(data.bookings || []);
+      } catch (err) {
+        console.error("Error fetching schedule (room availability):", err);
+      }
+    };
+
+    fetchBookings();
+  }, [roomSelected]);
+
+
   // room options ranging from classrooms, lecture halls, and meeting rooms
   const rooms = {
     Classrooms: ["KHW-057", "ENG202", "ENG411"],
@@ -195,6 +217,23 @@ function CreateRoomBookingPage() {
     }
   };
 
+  // check if a given date falls WITHIN any booked range (inclusive start, exclusive end is fine)
+  const isTimeUnavailable = (dateToCheck) => {
+    if (!dateToCheck || !roomSelected || roomBookings.length === 0) return false;
+
+    const checkTime = dateToCheck.getTime();
+
+    return roomBookings.some((booking) => {
+      if (booking.roomSelected !== roomSelected) return false;
+
+      const bookingStart = new Date(booking.startDate).getTime();
+      const bookingEnd = new Date(booking.endDate).getTime();
+
+      // Overlap: check if checkTime is during [bookingStart, bookingEnd)
+      return checkTime >= bookingStart && checkTime < bookingEnd;
+    });
+  };
+
   return (
     <div className="container">
       <div className="RoomDropDown-wrapper">
@@ -228,42 +267,41 @@ function CreateRoomBookingPage() {
               value={startDate}
               onChange={(newValue) => {
                 setStartDate(newValue);
-
                 if (endDate && newValue && endDate <= newValue) {
                   setEndDate(null);
                 }
               }}
               disablePast
-              closeOnSelect
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                },
-                actionBar: { actions: [] },
+              shouldDisableTime={(value, view) => {
+                // view is 'hours' or 'minutes'
+                const candidate = new Date(value);
+
+                // if no room selected yet, allow all
+                if (!roomSelected) return false;
+
+                return isTimeUnavailable(candidate);
               }}
             />
 
             {/* END DATE/TIME */}
             <DateTimePicker
-              label="End date & time"
-              value={endDate}
-              onChange={(newValue) => {
-                setEndDate(newValue);
-              }}
-              disablePast
-              minDateTime={startDate || undefined}
-              closeOnSelect
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                  error: Boolean(isInvalidRange),
-                  helperText: isInvalidRange
-                    ? "End time must be after start time."
-                    : "",
-                },
-                actionBar: { actions: [] },
-              }}
-            />
+            label="End date & time"
+            value={endDate}
+            onChange={setEndDate}
+            disablePast
+            minDateTime={startDate}
+            shouldDisableTime={(value, view) => {
+              const candidate = new Date(value);
+
+              // should be after start time
+              if (startDate && candidate <= startDate) return true;
+
+              // should not fall inside any existing booking
+              if (!roomSelected) return false;
+
+              return isTimeUnavailable(candidate);
+            }}
+          />
           </div>
         </LocalizationProvider>
       </div>
