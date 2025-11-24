@@ -28,10 +28,73 @@ function CreateRoomBookingPage() {
     Venues: ["Sears Atrium"],
   };
 
+  // rooms filtered by availability
+  const [filteredRooms, setFilteredRooms] = useState(rooms);
+
   /* Date and Time */
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const isInvalidRange = startDate && endDate && endDate <= startDate;
+
+  // NEW: control picker open/close
+  const [startPickerOpen, setStartPickerOpen] = useState(false);
+  const [endPickerOpen, setEndPickerOpen] = useState(false);
+
+  // Whenever start/end change, ask backend (Firebase) which rooms are unavailable
+  // Whenever start/end change, ask backend (Firebase) which rooms are unavailable
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      // no valid range yet → show all rooms
+      if (!startDate || !endDate || endDate <= startDate) {
+        setFilteredRooms(rooms);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/check-availability",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              startDate, // Date objects will serialize to ISO strings
+              endDate,
+            }),
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          console.error("Availability check failed:", data.error);
+          setFilteredRooms(rooms);
+          return;
+        }
+
+        const unavailable = data.unavailableRooms || [];
+
+        // build new rooms object without unavailable rooms
+        const updated = {};
+        Object.entries(rooms).forEach(([category, roomList]) => {
+          updated[category] = roomList.filter(
+            (room) => !unavailable.includes(room)
+          );
+        });
+
+        setFilteredRooms(updated);
+
+        // if current selection became unavailable, clear it
+        if (roomSelected && unavailable.includes(roomSelected)) {
+          setRoomSelected("");
+        }
+      } catch (err) {
+        console.error("Error checking availability:", err);
+        setFilteredRooms(rooms);
+      }
+    };
+
+    fetchAvailability();
+  }, [startDate, endDate]);
 
   /* Projector Textfield Handler */
   //Initialize default projector to 0
@@ -152,7 +215,7 @@ function CreateRoomBookingPage() {
           <option value="" disabled>
             -- Choose Room --
           </option>
-          {Object.entries(rooms).map(([category, roomList]) => (
+          {Object.entries(filteredRooms).map(([category, roomList]) => (
             <optgroup key={category} label={category}>
               {roomList.map((room) => (
                 <option key={room} value={room}>
@@ -163,33 +226,43 @@ function CreateRoomBookingPage() {
           ))}
         </select>
       </div>
+
       <div className="Calendar-wrapper">
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* START DATE/TIME */}
             <DateTimePicker
               label="Start date & time"
               value={startDate}
               onChange={(newValue) => {
                 setStartDate(newValue);
 
-                if (endDate && newValue && endDate < newValue) {
+                // keep your existing logic: if start moves after end, clear end
+                if (endDate && newValue && endDate <= newValue) {
                   setEndDate(null);
                 }
               }}
               disablePast
+              closeOnSelect
               slotProps={{
                 textField: {
                   fullWidth: true,
                 },
+                // removes OK / Cancel bar
+                actionBar: { actions: [] },
               }}
             />
 
+            {/* END DATE/TIME */}
             <DateTimePicker
               label="End date & time"
               value={endDate}
-              onChange={setEndDate} // <-- just set it
+              onChange={(newValue) => {
+                setEndDate(newValue);
+              }}
               disablePast
               minDateTime={startDate || undefined}
+              closeOnSelect
               slotProps={{
                 textField: {
                   fullWidth: true,
@@ -198,6 +271,7 @@ function CreateRoomBookingPage() {
                     ? "End time must be after start time."
                     : "",
                 },
+                actionBar: { actions: [] },
               }}
             />
           </div>
