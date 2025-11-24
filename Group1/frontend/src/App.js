@@ -217,19 +217,20 @@ function CreateRoomBookingPage() {
     }
   };
 
-  // checks to see if the user-selected date conflicts with other existing bookings
-  const isTimeUnavailable = (date) => {
-    if (!date || !roomSelected || roomBookings.length === 0) return false;
+  // check if a given date falls WITHIN any booked range (inclusive start, exclusive end is fine)
+  const isTimeUnavailable = (dateToCheck) => {
+    if (!dateToCheck || !roomSelected || roomBookings.length === 0) return false;
 
-    const selectedTime = date.getTime();
+    const checkTime = dateToCheck.getTime();
 
     return roomBookings.some((booking) => {
       if (booking.roomSelected !== roomSelected) return false;
 
-      const start = new Date(booking.startDate).getTime();
-      const end = new Date(booking.endDate).getTime();
+      const bookingStart = new Date(booking.startDate).getTime();
+      const bookingEnd = new Date(booking.endDate).getTime();
 
-      return selectedTime >= start && selectedTime < end;
+      // Overlap: check if checkTime is during [bookingStart, bookingEnd)
+      return checkTime >= bookingStart && checkTime < bookingEnd;
     });
   };
 
@@ -266,69 +267,41 @@ function CreateRoomBookingPage() {
               value={startDate}
               onChange={(newValue) => {
                 setStartDate(newValue);
-
                 if (endDate && newValue && endDate <= newValue) {
                   setEndDate(null);
                 }
               }}
               disablePast
-              shouldDisableDate={(day) => {
-                // disable if the whole day is booked for the selected room
-                return roomBookings.every((booking) => {
-                  if (booking.roomSelected !== roomSelected) return false;
-                  const start = new Date(booking.startDate);
-                  const end = new Date(booking.endDate);
-                  // if the whole day is blocked
-                  return day >= start && day < end;
-                });
-              }}
-              shouldDisableTime={(value, clockType) => {
-                if (!startDate) return false;
-                const testDate = new Date(startDate);
-                if (clockType === "hours") testDate.setHours(value);
-                if (clockType === "minutes") testDate.setMinutes(value);
-                return isTimeUnavailable(testDate);
-              }}
-              closeOnSelect
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                },
-                actionBar: { actions: [] },
+              shouldDisableTime={(value, view) => {
+                // view is 'hours' or 'minutes'
+                const candidate = new Date(value);
+
+                // if no room selected yet, allow all
+                if (!roomSelected) return false;
+
+                return isTimeUnavailable(candidate);
               }}
             />
 
             {/* END DATE/TIME */}
             <DateTimePicker
-              label="End date & time"
-              value={endDate}
-              //onChange={setEndDate}
-              onChange={(newValue) => {
-                setEndDate(newValue);
-              }}
-              disablePast
-              minDateTime={startDate || undefined}
-              shouldDisableTime={(value, clockType) => {
-                if (!startDate || !endDate) return false;
-                const testDate = new Date(endDate);
-                if (clockType === "hours") testDate.setHours(value);
-                if (clockType === "minutes") testDate.setMinutes(value);
+            label="End date & time"
+            value={endDate}
+            onChange={setEndDate}
+            disablePast
+            minDateTime={startDate}
+            shouldDisableTime={(value, view) => {
+              const candidate = new Date(value);
 
-                // should be after startDate and not overlap other bookings
-                return testDate <= startDate || isTimeUnavailable(testDate);
-              }}
-              closeOnSelect
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                  error: Boolean(isInvalidRange),
-                  helperText: isInvalidRange
-                    ? "End time must be after start time."
-                    : "",
-                },
-                actionBar: { actions: [] },
-              }}
-            />
+              // should be after start time
+              if (startDate && candidate <= startDate) return true;
+
+              // should not fall inside any existing booking
+              if (!roomSelected) return false;
+
+              return isTimeUnavailable(candidate);
+            }}
+          />
           </div>
         </LocalizationProvider>
       </div>
