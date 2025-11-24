@@ -16,9 +16,34 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 function CreateRoomBookingPage() {
   /* Room Dropdown Button Handler */
   const [roomSelected, setRoomSelected] = useState("");
+  const [roomBookings, setRoomBookings] = useState([]);
 
-  // save “not sent” booking here until backend is ready
-  const [bookingDraft, setBookingDraft] = useState(null);
+  // fetch schedule data whenever user selects a room
+  useEffect(() => {
+    if (!roomSelected) {
+      setRoomBookings([]);
+      return;
+    }
+
+    const fetchBookings = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:5000/api/room-schedule?room=${roomSelected}`
+        );
+        const data = await res.json();
+
+        console.log("Schedule (room availability) fetched:", data);
+
+        // booking array is stored from backend
+        setRoomBookings(data.bookings || []);
+      } catch (err) {
+        console.error("Error fetching schedule (room availability):", err);
+      }
+    };
+
+    fetchBookings();
+  }, [roomSelected]);
+
   // room options ranging from classrooms, lecture halls, and meeting rooms
   const rooms = {
     Classrooms: ["KHW-057", "ENG202", "ENG411"],
@@ -140,6 +165,19 @@ function CreateRoomBookingPage() {
     }
   };
 
+  // checks to see if the user-selected date conflicts with other existing bookings
+  const isTimeUnavailable = (selectedDate) => {
+    if (!selectedDate) return false;
+
+    const selected = new Date(selectedDate).getTime();
+
+    return roomBookings.some((booking) => {
+      const start = new Date(booking.startDate).getTime();
+      const end = new Date(booking.endDate).getTime();
+      return selected >= start && selected <= end;
+    });
+  };
+
   return (
     <div className="container">
       <div className="RoomDropDown-wrapper">
@@ -177,6 +215,11 @@ function CreateRoomBookingPage() {
                 }
               }}
               disablePast
+              shouldDisableDate={(day) => isTimeUnavailable(day)}
+              shouldDisableTime={(_, clockType) => {
+                if (!startDate) return false;
+                return isTimeUnavailable(startDate);
+              }}
               slotProps={{
                 textField: {
                   fullWidth: true,
@@ -187,9 +230,14 @@ function CreateRoomBookingPage() {
             <DateTimePicker
               label="End date & time"
               value={endDate}
-              onChange={setEndDate} // <-- just set it
+              onChange={setEndDate}
               disablePast
               minDateTime={startDate || undefined}
+              shouldDisableDate={(day) => isTimeUnavailable(day)}
+              shouldDisableTime={(_, clockType) => {
+                if (!endDate) return false;
+                return isTimeUnavailable(endDate);
+              }}
               slotProps={{
                 textField: {
                   fullWidth: true,
