@@ -8,15 +8,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+//Intitialize database connection
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   //Note: databseURL only for Realtime DB
   databaseURL: "https://cps714-b56c0-default-rtdb.firebaseio.com/",
 });
 
-// admin.firestore() if using Firestore; admin.database() for Realtime DB
 const db = admin.database();
 
+//Book a room through POST API 
 app.post("/api/book-room", async (req, res) => {
   const {
     roomSelected,
@@ -27,10 +28,12 @@ app.post("/api/book-room", async (req, res) => {
     cateringSelected,
     additionalResources,
   } = req.body;
+  //Verify room field is not empty
   if (!roomSelected || roomSelected.trim() === "") {
     return res.status(400).json({ error: "Room is required" });
   }
 
+  //Verify room is not already booked for the timeslot
   try {
     const start = new Date(startDate).getTime();
     const end = new Date(endDate).getTime();
@@ -49,7 +52,7 @@ app.post("/api/book-room", async (req, res) => {
         }
       }
     }
-
+    //push room data into database
     const ref = db.ref("roomBookings").push();
     await ref.set({
       roomSelected: roomSelected.trim(),
@@ -69,6 +72,7 @@ app.post("/api/book-room", async (req, res) => {
   }
 });
 
+//Get all unavailable dates/times for a room
 app.get("/api/room-schedule", async (req, res) => {
   try {
     const room = req.query.room;
@@ -137,6 +141,7 @@ app.get("/api/check-availability", async (req, res) => {
   }
 });
 
+//Ensure backend server always starts in port 5000
 const PORT = process.env.PORT || 5000;
 if (require.main === module) {
   app.listen(PORT, () => console.log(`Server started on port ${PORT}`));

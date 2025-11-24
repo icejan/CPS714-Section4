@@ -24,7 +24,7 @@ function CreateRoomBookingPage() {
       setRoomBookings([]);
       return;
     }
-
+    //fetch available times from backend for a selected room
     const fetchBookings = async () => {
       try {
         const res = await fetch(
@@ -50,7 +50,7 @@ function CreateRoomBookingPage() {
     Venues: ["Sears Atrium"],
   };
 
-  // rooms filtered by availability
+  // rooms filtered by date/time availability
   const [filteredRooms, setFilteredRooms] = useState(rooms);
 
   /* Date and Time */
@@ -148,21 +148,14 @@ function CreateRoomBookingPage() {
   const [messageVisible, setMessageVisible] = useState(false);
 
   const handleBookRoomButtonPressed = async () => {
-    //Debug on console
-    console.log("Room value:", roomSelected);
-    console.log("Start Date time:", startDate);
-    console.log("End Date time:", endDate);
-    console.log("Projector value:", projectorNum);
-    console.log("Mic value:", micNum);
-    console.log("Catering value:", cateringSelected);
-    console.log("Additional Resources value:", additionalResources);
-
+    //check room is not empty
     if (!roomSelected || roomSelected.trim() === "") {
       setMessage("Room number cannot be empty.");
       setMessageVisible(true);
       return;
     }
 
+    //check dates are not empty
     if (!startDate || !endDate) {
       setMessage("Please select a start and end date/time.");
       setMessageVisible(true);
@@ -174,6 +167,7 @@ function CreateRoomBookingPage() {
       setMessageVisible(true);
       return;
     }
+    //create POST request to book room
     try {
       const response = await fetch("http://localhost:5000/api/book-room", {
         method: "POST",
@@ -189,6 +183,7 @@ function CreateRoomBookingPage() {
         }),
       });
 
+      //receive POST response message
       const data = await response.json();
       if (response.ok) {
         setMessage("Room booked successfully");
@@ -203,6 +198,7 @@ function CreateRoomBookingPage() {
         setCatering(false);
         setAdditionalResources("");
 
+        //show room booked succesfully for a few seconds
         setTimeout(() => {
           setMessageVisible(false);
         }, 5000);
