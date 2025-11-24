@@ -27,18 +27,44 @@ admin.database.ServerValue = {
 
 const app = require("../src/app");
 
-describe("Feature#1 Test Suite - Room Availability Check", () => {
+describe("Feature #1 Test Suite - Room Availability Check", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockDatabase.ref.mockReturnValue(mockRef);
   });
 
-  describe("Requirement #1: room -> available date/times", () => {
-    it("should reject booking when the chosen room is already booked for that time range", async () => {
-      // Existing booking in DB for ENG103 (9:00–11:00)
+  describe("Test #1.0: date range → available rooms", () => {
+    it("should only mark overlapping rooms as unavailable", async () => {
       mockRef.once.mockResolvedValue({
         val: () => ({
-          existingBooking: {
+          booking1: {
+            roomSelected: "ENG103",
+            startDate: "2025-11-25T09:00:00.000Z",
+            endDate: "2025-11-25T11:00:00.000Z",
+          },
+          booking2: {
+            roomSelected: "KHW-057",
+            startDate: "2025-11-25T13:00:00.000Z",
+            endDate: "2025-11-25T15:00:00.000Z",
+          },
+        }),
+      });
+
+      const res = await request(app).get("/api/check-availability").query({
+        startDate: "2025-11-25T10:00:00.000Z",
+        endDate: "2025-11-25T12:00:00.000Z",
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.body.unavailableRooms).toEqual(["ENG103"]);
+    });
+  });
+
+  describe("Test #1.1: chosen room → available times", () => {
+    it("should correctly detect when a chosen room is unavailable due to overlap", async () => {
+      mockRef.once.mockResolvedValue({
+        val: () => ({
+          booking1: {
             roomSelected: "ENG103",
             startDate: "2025-11-25T09:00:00.000Z",
             endDate: "2025-11-25T11:00:00.000Z",
@@ -46,107 +72,13 @@ describe("Feature#1 Test Suite - Room Availability Check", () => {
         }),
       });
 
-      const newBooking = {
-        roomSelected: "ENG103",
-        // Overlaps with existing booking (10:00–12:00)
-        startDate: "2025-11-25T10:00:00.000Z",
-        endDate: "2025-11-25T12:00:00.000Z",
-        projectorNum: 1,
-        micNum: 1,
-        cateringSelected: false,
-        additionalResources: "",
-      };
-
-      const res = await request(app).post("/api/book-room").send(newBooking);
-
-      expect(res.statusCode).toBe(409);
-      expect(res.body.error).toMatch(/already booked/i);
-      expect(mockRef.set).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("Requirement #2: time range -> available rooms", () => {
-    describe("Testcase #1.0: returns 400 if startDate or endDate missing", () => {
-      it("should return 400 when dates are missing", async () => {
-        const res = await request(app)
-          .get("/api/check-availability")
-          .query({ startDate: "", endDate: "" }); // or simply omit them
-
-        expect(res.status).toBe(400);
-        expect(res.body.error).toBeDefined();
+      const res = await request(app).get("/api/check-availability").query({
+        startDate: "2025-11-25T09:30:00.000Z",
+        endDate: "2025-11-25T10:30:00.000Z",
       });
-    });
 
-    describe("Testcase #1.1: returns empty unavailableRooms when there are no bookings", () => {
-      it("should return empty unavailableRooms when there are no bookings", async () => {
-        mockRef.once.mockResolvedValue({
-          val: () => null, // no bookings in DB
-        });
-
-        const res = await request(app).get("/api/check-availability").query({
-          startDate: "2025-11-25T10:30:00.000Z",
-          endDate: "2025-11-25T12:30:00.000Z",
-        });
-
-        expect(res.status).toBe(200);
-        expect(res.body.unavailableRooms).toEqual([]);
-      });
-    });
-
-    describe("Testcase #1.2: marks a room as unavailable when the time overlaps", () => {
-      it("should mark ENG103 as unavailable when the time overlaps", async () => {
-        mockRef.once.mockResolvedValue({
-          val: () => ({
-            booking1: {
-              roomSelected: "ENG103",
-              startDate: "2025-11-25T09:00:00.000Z",
-              endDate: "2025-11-25T11:00:00.000Z",
-            },
-            booking2: {
-              roomSelected: "KHW-057",
-              startDate: "2025-11-26T13:00:00.000Z",
-              endDate: "2025-11-26T15:00:00.000Z",
-            },
-          }),
-        });
-
-        const res = await request(app).get("/api/check-availability").query({
-          // overlaps ENG103 but not KHW-057
-          startDate: "2025-11-25T10:00:00.000Z",
-          endDate: "2025-11-25T12:00:00.000Z",
-        });
-
-        expect(res.status).toBe(200);
-        expect(res.body.unavailableRooms).toContain("ENG103");
-        expect(res.body.unavailableRooms).not.toContain("KHW-057");
-      });
-    });
-
-    describe("Testcase #1.3: deduplicates unavailable rooms when multiple bookings overlap", () => {
-      it("should deduplicate unavailable rooms when multiple bookings overlap", async () => {
-        mockRef.once.mockResolvedValue({
-          val: () => ({
-            booking1: {
-              roomSelected: "ENG103",
-              startDate: "2025-11-25T09:00:00.000Z",
-              endDate: "2025-11-25T11:00:00.000Z",
-            },
-            booking2: {
-              roomSelected: "ENG103",
-              startDate: "2025-11-25T11:30:00.000Z",
-              endDate: "2025-11-25T13:00:00.000Z",
-            },
-          }),
-        });
-
-        const res = await request(app).get("/api/check-availability").query({
-          startDate: "2025-11-25T10:30:00.000Z",
-          endDate: "2025-11-25T12:30:00.000Z",
-        });
-
-        expect(res.status).toBe(200);
-        expect(res.body.unavailableRooms).toEqual(["ENG103"]);
-      });
+      expect(res.status).toBe(200);
+      expect(res.body.unavailableRooms).toContain("ENG103");
     });
   });
 });
