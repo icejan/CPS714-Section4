@@ -76,19 +76,17 @@ app.get("/api/room-schedule", async (req, res) => {
       return res.status(400).json({ error: "Room parameter required" });
     }
 
-    // Database path: /roomBookings/ROOMNAME
-    const bookingsRef = db.ref(`roomBookings/${room}`);
-    const snapshot = await bookingsRef.once("value");
+    // Read all bookings, then filter by room
+    const snapshot = await db.ref("roomBookings").once("value");
+    const all = snapshot.val() || {};
 
-    const bookings = [];
-
-    snapshot.forEach((child) => {
-      bookings.push(child.val());
-    });
+    const bookings = Object.values(all).filter(
+      (booking) => booking.roomSelected === room
+    );
 
     return res.json({
-      room: room,
-      bookings: bookings,
+      room,
+      bookings,
     });
   } catch (error) {
     console.error("Error checking schedule:", error);
@@ -97,8 +95,9 @@ app.get("/api/room-schedule", async (req, res) => {
 });
 
 // Check which rooms are unavailable for the given time range
-app.post("/api/check-availability", async (req, res) => {
-  const { startDate, endDate } = req.body;
+app.get("/api/check-availability", async (req, res) => {
+  // read from query instead of body
+  const { startDate, endDate, roomSelected } = req.query;
 
   if (!startDate || !endDate) {
     return res
@@ -110,7 +109,6 @@ app.post("/api/check-availability", async (req, res) => {
     const start = new Date(startDate).getTime();
     const end = new Date(endDate).getTime();
 
-    // Read all bookings from Realtime Database
     const snapshot = await db.ref("roomBookings").once("value");
     const bookings = snapshot.val() || {};
 
@@ -119,13 +117,14 @@ app.post("/api/check-availability", async (req, res) => {
     for (const id in bookings) {
       const booking = bookings[id];
 
-      // Optional: only block Approved + Pending bookings
-      // if (booking.status !== 'Approved' && booking.status !== 'Pending') continue;
+      // Optional: filter by room if you want to support that
+      if (roomSelected && booking.roomSelected !== roomSelected.trim()) {
+        continue;
+      }
 
       const bookingStart = new Date(booking.startDate).getTime();
       const bookingEnd = new Date(booking.endDate).getTime();
 
-      // intervals overlap?
       if (start < bookingEnd && end > bookingStart) {
         unavailableRooms.add(booking.roomSelected);
       }

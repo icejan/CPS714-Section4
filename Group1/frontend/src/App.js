@@ -49,16 +49,13 @@ function CreateRoomBookingPage() {
       }
 
       try {
+        const params = new URLSearchParams({
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+        });
+
         const response = await fetch(
-          "http://localhost:5000/api/check-availability",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              startDate, // Date objects will serialize to ISO strings
-              endDate,
-            }),
-          }
+          `http://localhost:5000/api/check-availability?${params.toString()}`
         );
 
         const data = await response.json();
@@ -161,8 +158,8 @@ function CreateRoomBookingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           roomSelected: roomSelected.trim(),
-          startDate: startDate,
-          endDate: endDate,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
           projectorNum: projectorNum,
           micNum: micNum,
           cateringSelected: cateringSelected,

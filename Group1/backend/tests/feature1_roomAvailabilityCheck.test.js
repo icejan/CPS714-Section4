@@ -59,10 +59,8 @@ describe("Feature#1 Test Suite - Room Availability Check", () => {
 
       const res = await request(app).post("/api/book-room").send(newBooking);
 
-      // Backend should reject this as a conflict
       expect(res.statusCode).toBe(409);
       expect(res.body.error).toMatch(/already booked/i);
-
       expect(mockRef.set).not.toHaveBeenCalled();
     });
   });
@@ -71,8 +69,8 @@ describe("Feature#1 Test Suite - Room Availability Check", () => {
     describe("Testcase #1.0: returns 400 if startDate or endDate missing", () => {
       it("should return 400 when dates are missing", async () => {
         const res = await request(app)
-          .post("/api/check-availability")
-          .send({ startDate: null, endDate: null });
+          .get("/api/check-availability")
+          .query({ startDate: "", endDate: "" }); // or simply omit them
 
         expect(res.status).toBe(400);
         expect(res.body.error).toBeDefined();
@@ -85,9 +83,9 @@ describe("Feature#1 Test Suite - Room Availability Check", () => {
           val: () => null, // no bookings in DB
         });
 
-        const res = await request(app).post("/api/check-availability").send({
-          startDate: "2025-11-25T10:00:00.000Z",
-          endDate: "2025-11-25T12:00:00.000Z",
+        const res = await request(app).get("/api/check-availability").query({
+          startDate: "2025-11-25T10:30:00.000Z",
+          endDate: "2025-11-25T12:30:00.000Z",
         });
 
         expect(res.status).toBe(200);
@@ -97,7 +95,6 @@ describe("Feature#1 Test Suite - Room Availability Check", () => {
 
     describe("Testcase #1.2: marks a room as unavailable when the time overlaps", () => {
       it("should mark ENG103 as unavailable when the time overlaps", async () => {
-        // fake bookings in Firebase
         mockRef.once.mockResolvedValue({
           val: () => ({
             booking1: {
@@ -113,8 +110,8 @@ describe("Feature#1 Test Suite - Room Availability Check", () => {
           }),
         });
 
-        const res = await request(app).post("/api/check-availability").send({
-          // This window overlaps ENG103’s booking but not KHW-057
+        const res = await request(app).get("/api/check-availability").query({
+          // overlaps ENG103 but not KHW-057
           startDate: "2025-11-25T10:00:00.000Z",
           endDate: "2025-11-25T12:00:00.000Z",
         });
@@ -142,7 +139,7 @@ describe("Feature#1 Test Suite - Room Availability Check", () => {
           }),
         });
 
-        const res = await request(app).post("/api/check-availability").send({
+        const res = await request(app).get("/api/check-availability").query({
           startDate: "2025-11-25T10:30:00.000Z",
           endDate: "2025-11-25T12:30:00.000Z",
         });
