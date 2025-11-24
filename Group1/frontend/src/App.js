@@ -36,11 +36,9 @@ function CreateRoomBookingPage() {
   const [endDate, setEndDate] = useState(null);
   const isInvalidRange = startDate && endDate && endDate <= startDate;
 
-  // NEW: control picker open/close
   const [startPickerOpen, setStartPickerOpen] = useState(false);
   const [endPickerOpen, setEndPickerOpen] = useState(false);
 
-  // Whenever start/end change, ask backend (Firebase) which rooms are unavailable
   // Whenever start/end change, ask backend (Firebase) which rooms are unavailable
   useEffect(() => {
     const fetchAvailability = async () => {
@@ -97,7 +95,6 @@ function CreateRoomBookingPage() {
   }, [startDate, endDate]);
 
   /* Projector Textfield Handler */
-  //Initialize default projector to 0
   const [defaultProjector, setDefaultProjector] = useState(0);
   const [projectorNum, setProjector] = useState(defaultProjector);
 
@@ -106,7 +103,6 @@ function CreateRoomBookingPage() {
   };
 
   /* Mic Textfield Handler */
-  //Initialize default mic to 0
   const [defaultMic, setDefaultMic] = useState(0);
   const [micNum, setMic] = useState(defaultMic);
 
@@ -115,7 +111,6 @@ function CreateRoomBookingPage() {
   };
 
   /*  Catering Handler */
-  //Initialize default catering to false
   const [cateringSelected, setCatering] = useState(false);
 
   const handleCateringChange = (event) => {
@@ -237,7 +232,6 @@ function CreateRoomBookingPage() {
               onChange={(newValue) => {
                 setStartDate(newValue);
 
-                // keep your existing logic: if start moves after end, clear end
                 if (endDate && newValue && endDate <= newValue) {
                   setEndDate(null);
                 }
@@ -248,7 +242,6 @@ function CreateRoomBookingPage() {
                 textField: {
                   fullWidth: true,
                 },
-                // removes OK / Cancel bar
                 actionBar: { actions: [] },
               }}
             />
