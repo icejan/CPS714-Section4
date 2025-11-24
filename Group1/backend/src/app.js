@@ -1,7 +1,7 @@
-const express = require('express');
-const cors = require('cors');
-const admin = require('firebase-admin');
-const serviceAccount = require('./serviceAccountKey.json');
+const express = require("express");
+const cors = require("cors");
+const admin = require("firebase-admin");
+const serviceAccount = require("./serviceAccountKey.json");
 
 const app = express();
 
@@ -11,22 +11,30 @@ app.use(express.json());
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   //Note: databseURL only for Realtime DB
-  databaseURL: "https://cps714-b56c0-default-rtdb.firebaseio.com/"
+  databaseURL: "https://cps714-b56c0-default-rtdb.firebaseio.com/",
 });
 
 // admin.firestore() if using Firestore; admin.database() for Realtime DB
-const db = admin.database(); 
+const db = admin.database();
 
-app.post('/api/book-room', async (req, res) => {
-  const { roomSelected, startDate, endDate, projectorNum, micNum, cateringSelected, additionalResources } = req.body;
-  if (!roomSelected || roomSelected.trim() === '') {
-    return res.status(400).json({ error: 'Room is required' });
+app.post("/api/book-room", async (req, res) => {
+  const {
+    roomSelected,
+    startDate,
+    endDate,
+    projectorNum,
+    micNum,
+    cateringSelected,
+    additionalResources,
+  } = req.body;
+  if (!roomSelected || roomSelected.trim() === "") {
+    return res.status(400).json({ error: "Room is required" });
   }
 
   try {
     const start = new Date(startDate).getTime();
     const end = new Date(endDate).getTime();
-    const snapshot = await db.ref('roomBookings').once('value');
+    const snapshot = await db.ref("roomBookings").once("value");
     const bookings = snapshot.val() || {};
 
     for (const id in bookings) {
@@ -35,12 +43,14 @@ app.post('/api/book-room', async (req, res) => {
         const bookingStart = new Date(booking.startDate).getTime();
         const bookingEnd = new Date(booking.endDate).getTime();
         if (start < bookingEnd && end > bookingStart) {
-          return res.status(409).json({ error: 'Room is already booked for this time slot' });
+          return res
+            .status(409)
+            .json({ error: "Room is already booked for this time slot" });
         }
       }
     }
 
-    const ref = db.ref('roomBookings').push();
+    const ref = db.ref("roomBookings").push();
     await ref.set({
       roomSelected: roomSelected.trim(),
       startDate: startDate,
@@ -50,76 +60,82 @@ app.post('/api/book-room', async (req, res) => {
       cateringSelected: cateringSelected,
       additionalResources: additionalResources ? additionalResources : null,
       bookedAt: admin.database.ServerValue.TIMESTAMP,
-      status: "Pending" //For faculty to approve booking
+      status: "Pending", //For faculty to approve booking
     });
-    return res.json({ message: 'Room booked successfully' });
+    return res.json({ message: "Room booked successfully" });
   } catch (error) {
-    console.error('Error saving booking:', error);
-    return res.status(500).json({ error: 'Failed to book room' });
+    console.error("Error saving booking:", error);
+    return res.status(500).json({ error: "Failed to book room" });
   }
 });
 
 app.get("/api/room-schedule", async (req, res) => {
-    try {
-        const room = req.query.room;
-        if (!room) {
-            return res.status(400).json({ error: "Room parameter required" });
-        }
-
-        // Database path: /roomBookings/ROOMNAME
-        const bookingsRef = db.ref(`roomBookings/${room}`);
-        const snapshot = await bookingsRef.once("value");
-
-        const bookings = [];
-
-        snapshot.forEach((child) => {
-            bookings.push(child.val());
-        });
-
-        return res.json({
-            room: room,
-            bookings: bookings
-        });
-    } catch (error) {
-        console.error("Error checking schedule:", error);
-        res.status(500).json({ error: "Failed to retrieve schedule" });
+  try {
+    const room = req.query.room;
+    if (!room) {
+      return res.status(400).json({ error: "Room parameter required" });
     }
+
+    // Read all bookings, then filter by room
+    const snapshot = await db.ref("roomBookings").once("value");
+    const all = snapshot.val() || {};
+
+    const bookings = Object.values(all).filter(
+      (booking) => booking.roomSelected === room
+    );
+
+    return res.json({
+      room,
+      bookings,
+    });
+  } catch (error) {
+    console.error("Error checking schedule:", error);
+    res.status(500).json({ error: "Failed to retrieve schedule" });
+  }
 });
 
-app.get('/api/check-availability', async (req, res) => {
-  const { startDate, endDate } = req.body;
+// Check which rooms are unavailable for the given time range
+app.get("/api/check-availability", async (req, res) => {
+  // read from query instead of body
+  const { startDate, endDate, roomSelected } = req.query;
 
   if (!startDate || !endDate) {
-    return res.status(400).json({ error: 'Start date and end date are required' });
+    return res
+      .status(400)
+      .json({ error: "Start date and end date are required" });
   }
 
   try {
     const start = new Date(startDate).getTime();
     const end = new Date(endDate).getTime();
 
-    const snapshot = await db.ref('roomBookings').once('value');
+    const snapshot = await db.ref("roomBookings").once("value");
     const bookings = snapshot.val() || {};
-    const unavailableRooms = [];
+
+    const unavailableRooms = new Set();
 
     for (const id in bookings) {
       const booking = bookings[id];
+
+      // Optional: filter by room if you want to support that
+      if (roomSelected && booking.roomSelected !== roomSelected.trim()) {
+        continue;
+      }
+
       const bookingStart = new Date(booking.startDate).getTime();
       const bookingEnd = new Date(booking.endDate).getTime();
 
       if (start < bookingEnd && end > bookingStart) {
-        unavailableRooms.push(booking.roomSelected);
+        unavailableRooms.add(booking.roomSelected);
       }
     }
 
-    const uniqueUnavailableRooms = [...new Set(unavailableRooms)];
-
-    return res.json({ unavailableRooms: uniqueUnavailableRooms });
+    return res.json({ unavailableRooms: [...unavailableRooms] });
   } catch (error) {
-    console.error('Error checking availability:', error);
-    return res.status(500).json({ error: 'Failed to check availability' });
+    console.error("Error checking availability:", error);
+    return res.status(500).json({ error: "Failed to check availability" });
   }
 });
-
 
 const PORT = process.env.PORT || 5000;
 if (require.main === module) {

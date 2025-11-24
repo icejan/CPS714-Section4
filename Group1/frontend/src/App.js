@@ -18,7 +18,7 @@ function CreateRoomBookingPage() {
   const [roomSelected, setRoomSelected] = useState("");
   const [roomBookings, setRoomBookings] = useState([]);
 
-  // fetch schedule data whenever user selects a room
+  // fetch room availability data whenever user selects a room
   useEffect(() => {
     if (!roomSelected) {
       setRoomBookings([]);
@@ -28,13 +28,9 @@ function CreateRoomBookingPage() {
     const fetchBookings = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5000/api/room-schedule?room=${roomSelected}`
+          `http://localhost:5000/api/room-schedule?room=${encodeURIComponent(roomSelected)}`
         );
         const data = await res.json();
-
-        console.log("Schedule (room availability) fetched:", data);
-
-        // booking array is stored from backend
         setRoomBookings(data.bookings || []);
       } catch (err) {
         console.error("Error fetching schedule (room availability):", err);
@@ -43,6 +39,7 @@ function CreateRoomBookingPage() {
 
     fetchBookings();
   }, [roomSelected]);
+
 
   // room options ranging from classrooms, lecture halls, and meeting rooms
   const rooms = {
@@ -53,13 +50,70 @@ function CreateRoomBookingPage() {
     Venues: ["Sears Atrium"],
   };
 
+  // rooms filtered by availability
+  const [filteredRooms, setFilteredRooms] = useState(rooms);
+
   /* Date and Time */
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const isInvalidRange = startDate && endDate && endDate <= startDate;
 
+  const [startPickerOpen, setStartPickerOpen] = useState(false);
+  const [endPickerOpen, setEndPickerOpen] = useState(false);
+
+  // Whenever start/end change, ask backend (Firebase) which rooms are unavailable
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      // no valid range yet → show all rooms
+      if (!startDate || !endDate || endDate <= startDate) {
+        setFilteredRooms(rooms);
+        return;
+      }
+
+      try {
+        const params = new URLSearchParams({
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+        });
+
+        const response = await fetch(
+          `http://localhost:5000/api/check-availability?${params.toString()}`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          console.error("Availability check failed:", data.error);
+          setFilteredRooms(rooms);
+          return;
+        }
+
+        const unavailable = data.unavailableRooms || [];
+
+        // build new rooms object without unavailable rooms
+        const updated = {};
+        Object.entries(rooms).forEach(([category, roomList]) => {
+          updated[category] = roomList.filter(
+            (room) => !unavailable.includes(room)
+          );
+        });
+
+        setFilteredRooms(updated);
+
+        // if current selection became unavailable, clear it
+        if (roomSelected && unavailable.includes(roomSelected)) {
+          setRoomSelected("");
+        }
+      } catch (err) {
+        console.error("Error checking availability:", err);
+        setFilteredRooms(rooms);
+      }
+    };
+
+    fetchAvailability();
+  }, [startDate, endDate]);
+
   /* Projector Textfield Handler */
-  //Initialize default projector to 0
   const [defaultProjector, setDefaultProjector] = useState(0);
   const [projectorNum, setProjector] = useState(defaultProjector);
 
@@ -68,7 +122,6 @@ function CreateRoomBookingPage() {
   };
 
   /* Mic Textfield Handler */
-  //Initialize default mic to 0
   const [defaultMic, setDefaultMic] = useState(0);
   const [micNum, setMic] = useState(defaultMic);
 
@@ -77,7 +130,6 @@ function CreateRoomBookingPage() {
   };
 
   /*  Catering Handler */
-  //Initialize default catering to false
   const [cateringSelected, setCatering] = useState(false);
 
   const handleCateringChange = (event) => {
@@ -128,8 +180,8 @@ function CreateRoomBookingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           roomSelected: roomSelected.trim(),
-          startDate: startDate,
-          endDate: endDate,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
           projectorNum: projectorNum,
           micNum: micNum,
           cateringSelected: cateringSelected,
@@ -166,15 +218,18 @@ function CreateRoomBookingPage() {
   };
 
   // checks to see if the user-selected date conflicts with other existing bookings
-  const isTimeUnavailable = (selectedDate) => {
-    if (!selectedDate) return false;
+  const isTimeUnavailable = (date) => {
+    if (!date || !roomSelected || roomBookings.length === 0) return false;
 
-    const selected = new Date(selectedDate).getTime();
+    const selectedTime = date.getTime();
 
     return roomBookings.some((booking) => {
+      if (booking.roomSelected !== roomSelected) return false;
+
       const start = new Date(booking.startDate).getTime();
       const end = new Date(booking.endDate).getTime();
-      return selected >= start && selected <= end;
+
+      return selectedTime >= start && selectedTime < end;
     });
   };
 
@@ -190,7 +245,7 @@ function CreateRoomBookingPage() {
           <option value="" disabled>
             -- Choose Room --
           </option>
-          {Object.entries(rooms).map(([category, roomList]) => (
+          {Object.entries(filteredRooms).map(([category, roomList]) => (
             <optgroup key={category} label={category}>
               {roomList.map((room) => (
                 <option key={room} value={room}>
@@ -201,43 +256,68 @@ function CreateRoomBookingPage() {
           ))}
         </select>
       </div>
+
       <div className="Calendar-wrapper">
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* START DATE/TIME */}
             <DateTimePicker
               label="Start date & time"
               value={startDate}
               onChange={(newValue) => {
                 setStartDate(newValue);
 
-                if (endDate && newValue && endDate < newValue) {
+                if (endDate && newValue && endDate <= newValue) {
                   setEndDate(null);
                 }
               }}
               disablePast
-              shouldDisableDate={(day) => isTimeUnavailable(day)}
-              shouldDisableTime={(_, clockType) => {
-                if (!startDate) return false;
-                return isTimeUnavailable(startDate);
+              shouldDisableDate={(day) => {
+                // disable if the whole day is booked for the selected room
+                return roomBookings.every((booking) => {
+                  if (booking.roomSelected !== roomSelected) return false;
+                  const start = new Date(booking.startDate);
+                  const end = new Date(booking.endDate);
+                  // if the whole day is blocked
+                  return day >= start && day < end;
+                });
               }}
+              shouldDisableTime={(value, clockType) => {
+                if (!startDate) return false;
+                const testDate = new Date(startDate);
+                if (clockType === "hours") testDate.setHours(value);
+                if (clockType === "minutes") testDate.setMinutes(value);
+                return isTimeUnavailable(testDate);
+              }}
+              closeOnSelect
               slotProps={{
                 textField: {
                   fullWidth: true,
                 },
+                actionBar: { actions: [] },
               }}
             />
 
+            {/* END DATE/TIME */}
             <DateTimePicker
               label="End date & time"
               value={endDate}
-              onChange={setEndDate}
+              //onChange={setEndDate}
+              onChange={(newValue) => {
+                setEndDate(newValue);
+              }}
               disablePast
               minDateTime={startDate || undefined}
-              shouldDisableDate={(day) => isTimeUnavailable(day)}
-              shouldDisableTime={(_, clockType) => {
-                if (!endDate) return false;
-                return isTimeUnavailable(endDate);
+              shouldDisableTime={(value, clockType) => {
+                if (!startDate || !endDate) return false;
+                const testDate = new Date(endDate);
+                if (clockType === "hours") testDate.setHours(value);
+                if (clockType === "minutes") testDate.setMinutes(value);
+
+                // should be after startDate and not overlap other bookings
+                return testDate <= startDate || isTimeUnavailable(testDate);
               }}
+              closeOnSelect
               slotProps={{
                 textField: {
                   fullWidth: true,
@@ -246,6 +326,7 @@ function CreateRoomBookingPage() {
                     ? "End time must be after start time."
                     : "",
                 },
+                actionBar: { actions: [] },
               }}
             />
           </div>
